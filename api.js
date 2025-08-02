@@ -30,25 +30,41 @@ app.post('/api/gerar-pix', async (req, res) => {
 
     const intValor = parseInt(valor);
 
-    const payload = {
-      customer: {
-        document: { number: cpf, type: "cpf" },
-        name: nome,
-        email,
-        phone: celular
-      },
-      shipping: { fee: 0 },
-      amount: intValor,
-      paymentMethod: "pix",
-      items: [
-        {
-          tangible: true,
-          title: produto,
-          unitPrice: intValor,
-          quantity: 1
-        }
-      ]
-    };
+   const payload = {
+  amount: intValor,
+  paymentMethod: "pix",
+  pix: {
+    expiresInDays: 2 // define o vencimento do QR Code
+  },
+  customer: {
+    name: nome,
+    email,
+    document: { number: cpf, type: "cpf" },
+    phone: celular
+  },
+  shipping: {
+    fee: 0,
+    address: {
+      street: req.body.rua || "Rua Desconhecida",
+      streetNumber: "SN",
+      complement: "",
+      zipCode: req.body.cep || "00000000",
+      neighborhood: req.body.bairro || "Centro",
+      city: req.body.cidade || "Cidade",
+      state: "SP",
+      country: "BR"
+    }
+  },
+  items: [
+    {
+      title: produto,
+      unitPrice: intValor,
+      quantity: 1,
+      tangible: true
+    }
+  ]
+};
+
 
     const token = "sk_live_v2knIOxAPTdctFBmT630msIiCHEcFqb85GCcyH2dpv";
     const auth = Buffer.from(`${token}:x`).toString("base64");
