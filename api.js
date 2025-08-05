@@ -66,7 +66,7 @@ app.post('/api/gerar-pix', async (req, res) => {
 };
 
 
-    const token = "sk_live_v2knIOxAPTdctFBmT630msIiCHEcFqb85GCcyH2dpv";
+    const token = "sk_live_v2uUCCFcp4pTlYU5oTB70ahZ2WHDgtEDi3NIzPDIb6";
     const auth = Buffer.from(`${token}:x`).toString("base64");
 
     const response = await axios.post("https://api.otimizepagamentos.com/v1/transactions", payload, {
