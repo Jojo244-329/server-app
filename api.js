@@ -69,7 +69,7 @@ app.post('/api/gerar-pix', async (req, res) => {
     const token = "sk_live_v2knIOxAPTdctFBmT630msIiCHEcFqb85GCcyH2dpv";
     const auth = Buffer.from(`${token}:x`).toString("base64");
 
-    const response = await axios.post("https://api.velana.com.br/v1/transactions", payload, {
+    const response = await axios.post("https://api.otimizepagamentos.com/v1/transactions", payload, {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
