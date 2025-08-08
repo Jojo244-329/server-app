@@ -12,17 +12,17 @@ app.use(cors());
 app.use(express.json());
 
 // 🔐 SECRETS (.env em produção)
-const VERSO_SK = process.env.VERSO_SK || 'sk_XXXX';
-const VERSO_PK = process.env.VERSO_PK || 'pk_YYYY';
+const VERSO_SK = process.env.VERSO_SK || 'sk_8ZahrBQrLN1UVB6ELo55zqmX3TWo2PZcHrnqB0Eb8jHTjUoS';
+const VERSO_PK = process.env.VERSO_PK || 'pk_mJdRuvdl0-jLwUbbLri922cEHpSgrfwfcf4aoflUHzMi0-_T';
 const VERSO_AUTH_HEADER = {
   accept: 'application/json',
   'content-type': 'application/json',
   authorization: `Basic ${Buffer.from(`${VERSO_SK}:${VERSO_PK}`).toString('base64')}`,
 };
 
-const fbPixelId = process.env.FB_PIXEL_ID || 'PIXEL_ID_AQUI';
-const fbAccessToken = process.env.FB_ACCESS_TOKEN || 'FB_TOKEN_AQUI';
-const UTMIFY_TOKEN = process.env.UTMIFY_TOKEN || 'UTMIFY_TOKEN_AQUI';
+const fbPixelId ='1134293725260676';
+const fbAccessToken ='EAAJk6GQkc6UBPJg0msqpANhorrYuPUdO2uxBjX48xPfhB2xlWpdnWktAjS0hdx63ZBKAl4BuNHh6iZCtahkRaD77oComun4VjjcZCRq1Nj2olpc3GcjzLWkl9HEZAS3KJIlBAfeRw7tMZANBw3y8YvMS6EUdtl2ZCu9FGHIqpCGlPHI6FqLZB2jgE7x3qDu8hjK5gZDZD';
+const UTMIFY_TOKEN ='yWZCZFgh8RKrNBPJ4feDMtSIYo0mu1ylNraP';
 const POSTBACK_URL = process.env.POSTBACK_URL || 'https://seu-dominio.com/api/pix-webhook';
 
 // 🔧 Helpers
