@@ -11,14 +11,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔐 SECRETS (.env em produção)
-const VERSO_SK = process.env.VERSO_SK || 'sk_8ZahrBQrLN1UVB6ELo55zqmX3TWo2PZcHrnqB0Eb8jHTjUoS';
-const VERSO_PK = process.env.VERSO_PK || 'pk_mJdRuvdl0-jLwUbbLri922cEHpSgrfwfcf4aoflUHzMi0-_T';
-const VERSO_AUTH_HEADER = {
-  accept: 'application/json',
-  'content-type': 'application/json',
-  authorization: `Basic ${Buffer.from(`${VERSO_SK}:${VERSO_PK}`).toString('base64')}`,
-};
+
+
 
 const fbPixelId ='1134293725260676';
 const fbAccessToken ='EAAJk6GQkc6UBPJg0msqpANhorrYuPUdO2uxBjX48xPfhB2xlWpdnWktAjS0hdx63ZBKAl4BuNHh6iZCtahkRaD77oComun4VjjcZCRq1Nj2olpc3GcjzLWkl9HEZAS3KJIlBAfeRw7tMZANBw3y8YvMS6EUdtl2ZCu9FGHIqpCGlPHI6FqLZB2jgE7x3qDu8hjK5gZDZD';
@@ -36,77 +30,80 @@ function hashSHA256(value) {
 // ===================== GERAR PIX (Gate novo / Verso) =====================
 app.post('/api/gerar-pix', async (req, res) => {
   try {
-    const { nome, cpf, email, celular, valor, produto, campanha } = req.body;
-
-    // ✅ Validações (mantidas)
-    if (!cpf || cpf.length !== 11 || !/^\d+$/.test(cpf)) {
-      return res.status(400).json({ error: 'CPF inválido' });
-    }
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Email inválido' });
-    }
-    if (!celular || celular.length < 10) {
-      return res.status(400).json({ error: 'Celular inválido' });
-    }
-    if (!valor || isNaN(valor) || Number(valor) < 100) {
-      // Assumindo "valor" em CENTAVOS; mínimo R$ 1,00
-      return res.status(400).json({ error: 'Valor inválido' });
-    }
-
-    const amount = parseInt(valor, 10); // centavos
-
-    // Payload conforme VersoPayments
+      const { nome, cpf, email, celular, valor, produto } = req.body;
+  
+      if (!cpf || cpf.length !== 11 || !/^\d+$/.test(cpf)) {
+        return res.status(400).json({ error: "CPF inválido" });
+      }
+  
+      if (!email || !email.includes("@")) {
+        return res.status(400).json({ error: "Email inválido" });
+      }
+  
+      if (!celular || celular.length < 10) {
+        return res.status(400).json({ error: "Celular inválido" });
+      }
+  
+      if (!valor || isNaN(valor) || valor < 100) {
+        return res.status(400).json({ error: "Valor inválido" });
+      }
+  
+      const intValor = parseInt(valor);
+  
     const payload = {
-      paymentMethod: 'pix',
-      ip: req.ip || '127.0.0.1',
-      pix: { expiresInDays: 2 },
-      items: [
-        {
-          title: produto || `Pedido ${nome}`,
-          unitPrice: amount,
-          quantity: 1,
-          tangible: false,
-        },
-      ],
-      amount,
-      externalRef: `pedido-${uuidv4()}`,
-      customer: {
-        name: nome,
-        email,
-        phone: celular,
-        document: { type: 'cpf', number: cpf },
-      },
-      postbackUrl: POSTBACK_URL,
-      traceable: true,
-      metadata: JSON.stringify({
-        origem: 'site',
-        campanha: campanha || 'default',
-      }),
-    };
+    amount: intValor,
+    paymentMethod: "pix",
+    pix: {
+      expiresInDays: 2 // define o vencimento do QR Code
+    },
+    customer: {
+      name: nome,
+      email,
+      document: { number: cpf, type: "cpf" },
+      phone: celular
+    },
+    shipping: {
+      fee: 0,
+      address: {
+        street: req.body.rua || "Rua Desconhecida",
+        streetNumber: "SN",
+        complement: "",
+        zipCode: req.body.cep || "00000000",
+        neighborhood: req.body.bairro || "Centro",
+        city: req.body.cidade || "Cidade",
+        state: "SP",
+        country: "BR"
+      }
+    },
+    items: [
+      {
+        title: produto,
+        unitPrice: intValor,
+        quantity: 1,
+        tangible: true
+      }
+    ]
+  };
+  
+  
+      const token = "sk_live_v2knIOxAPTdctFBmT630msIiCHEcFqb85GCcyH2dpv";
+      const auth = Buffer.from(`${token}:x`).toString("base64");
+  
+      const response = await axios.post("https://api.velana.com.br/v1/transactions", payload, {
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+          authorization: `Basic ${auth}`
+        }
+      }); 
 
-    const rr = await axios.post(
-      'https://api.versopayments.com/api/v1/transactions',
-      payload,
-      { headers: VERSO_AUTH_HEADER }
-    );
-
-    const qrcodeText = rr.data?.data?.pix?.qrcode;
-    const id = rr.data?.data?.id || rr.data?.objectId || null;
-    const secureUrl = rr.data?.data?.secureUrl || '';
-
-    if (!qrcodeText) {
-      console.error('QR ausente:', rr.data);
-      return res.status(500).json({ error: 'QR Code (texto) ausente no gateway' });
-    }
-
-    // 🔙 RESPOSTA compatível com teu front (pagamento.js / qrcode.js)
-    res.json({
-      raw: {
-        pix: { qrcode: qrcodeText },
-        secureUrl,
-        id,
-      },
-    });
+      console.log('📦 Resposta do gateway:', response.data);
+  
+      res.json({
+        qrCodeImage: response.data?.pix?.qrCodeImage,
+        txid: response.data?.pix?.txid,
+        raw: response.data
+      });
 
     // (Opcional) Disparos de pixel de checkout aqui — não bloqueiam a resposta
     try {
@@ -140,6 +137,8 @@ app.post('/api/gerar-pix', async (req, res) => {
       .json({ error: 'Erro ao gerar Pix', details: err.response?.data || err.message });
   }
 });
+
+
 
 // ===================== WEBHOOK (Verso + compat) =====================
 app.post('/api/pix-webhook', async (req, res) => {
